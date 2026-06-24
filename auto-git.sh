@@ -18,15 +18,29 @@ function switch_branch () {
             'git log --oneline $(echo {} | tr -d "* ")' \
         --color bg:#222222,preview-bg:#333333)
 
+    exit_exeption
+    
+    selected=$(echo $selected | tr -d "* ")
+
+    git switch "$selected"
+}
+
+function merge () {
+
+    selected=$(git branch | fzf +m \
+        --height 100% \
+        --layout reverse \
+        --border \
+        --preview \
+            'git diff $(git branch | grep "^*" | tr -d "* ") $(echo {} | tr -d "* ")' \
+        --color bg:#222222,preview-bg:#333333)
 
     exit_exeption
     
     selected=$(echo $selected | tr -d "* ")
 
-    echo "$selected"
-
     git switch "$selected"
 }
 
-switch_branch
+merge
 
