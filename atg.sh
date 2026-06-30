@@ -386,6 +386,7 @@ function main() {
     echo ""
     CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "HEAD detached")
     sleep 1
+    clear
     main
 }
 
