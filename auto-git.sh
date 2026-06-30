@@ -76,18 +76,19 @@ function switch_branch () {
 
 function merge () {
 
-    selected=$(git branch | fzf +m \
+    local selected exit_code
+    selected=$( (echo "$VOLTAR"; other_branches) | fzf +m \
         "${FZF_OPTS[@]}" \
         --header "Select a branch to merge into the current branch:" \
         --height 100% \
         --preview \
             'git -c color.ui=always diff $(git branch | grep "^*" | tr -d "* ") $(echo {} | tr -d "* ")')
-
     exit_code=$?
-    fzf_check $exit_code || return 0
-    
-    selected=$(echo $selected | tr -d "* ")
 
+    fzf_check $exit_code || return 0
+    [[ "$selected" == "$VOLTAR" ]] && return 0
+
+    selected=$(echo $selected | tr -d "* ")
     git merge "$selected"
 }
 
