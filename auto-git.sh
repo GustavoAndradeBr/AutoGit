@@ -274,62 +274,63 @@ pull_fetch() {
     esac
 }
 
-function main (){
+# MENU PRINCIPAL
+function main() {
+    local dirty_marker=""
+    git diff --quiet && git diff --cached --quiet || dirty_marker=" [*]"
 
-    option=(\
-        "1 - Switch Branch" \
-        "2 - Merge Branch" \
-        "3 - Delete Branch" \
-        "4 - Create Branch" \
-        "5 - Commit Changes" \
-        "6 - Exit" \
+    local remote_info=""
+    if git remote get-url origin &>/dev/null; then
+        remote_info=$(git remote get-url origin | sed 's/.*github.com[:/]//' | sed 's/\.git//')
+    fi
+
+    local header_line="  $REPO_NAME"
+    [ -n "$remote_info" ] && header_line+="  |  $remote_info"
+    header_line+="  |  Branch atual: $CURRENT_BRANCH$dirty_marker"
+
+    local footer_line="  ↑/↓ navegar   enter selecionar   esc cancelar   |   by Gustavo Andrade · github.com/GustavoAndradeBr"
+
+    local options=(
+        "1 - switch  |  Trocar de branch"
+        "2 - create  |  Criar nova branch"
+        "3 - merge   |  Mergear branch"
+        "4 - delete  |  Deletar branch"
+        "5 - commit  |  Commit interativo"
+        "6 - stash   |  Gerenciar stash"
+        "7 - log     |  Ver historico"
+        "8 - sync    |  Pull / Fetch"
+        "9 - exit    |  Sair"
     )
 
-    selected=$(for opt in "${option[@]}"; do echo "$opt"; done | fzf +m \
-        --header "Select an option:" \
-        --height 40% \
-        --layout reverse \
-        --border \
-        --color bg:#222222)
-
+    local selected exit_code
+    selected=$(printf "%s\n" "${options[@]}" | fzf +m \
+        "${FZF_OPTS[@]}" \
+        --header "$header_line" \
+        --footer "$footer_line" \
+        --height 100% \
+        --no-preview \
+        --padding '1,2')
     exit_code=$?
-    fzf_check $exit_code || return 0
 
-    case "$selected" in 
-        ${option[0]})
-            echo "Switching Branch..."
-            switch_branch
-            exit 0
-        ;;
-        ${option[1]})
-            echo "Merging Branch..."
-            merge_branch
-            exit 0
-        ;;
-        ${option[2]})
-            echo "Deleting Branch..."
-            delete_branch
-            exit 0
-        ;; 
-        ${option[3]})
-            echo "Creating Branch..."
-            create_branch
-            exit 0
-        ;;
-        ${option[4]})
-            echo "Committing Changes..."
-            commit_interativo
-            exit 0
-        ;;
-        ${option[5]})
-            echo "Exiting..."
-            exit 0
-        ;;
-        *)
-            echo "Invalid option. Exiting..."
-            exit 1
-        ;;
-    esac      
+    fzf_check $exit_code || exit 0
+
+    echo ""
+    case "$selected" in
+        *"switch"*)  switch_branch ;;
+        *"create"*)  create_branch ;;
+        *"merge"*)   merge_branch ;;
+        *"delete"*)  delete_branch ;;
+        *"commit"*)  commit_interativo ;;
+        *"stash"*)   stash_menu ;;
+        *"log"*)     show_log ;;
+        *"sync"*)    pull_fetch ;;
+        *"exit"*)    exit 0 ;;
+    esac
+
+    echo ""
+    CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "HEAD detached")
+    sleep 1
+    main
 }
 
 main
