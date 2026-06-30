@@ -189,6 +189,50 @@ commit_interativo() {
     confirm "Fazer push agora?" && git push && echo "  OK: push realizado." || true
 }
 
+undo_commit() {
+    if ! git log -1 &>/dev/null; then
+        echo "  Nenhum commit ainda neste repositorio."
+        return
+    fi
+
+    echo ""
+    echo "  Ultimo commit:"
+    git -c color.ui=always log -1 --oneline
+    echo ""
+
+    local action exit_code
+    action=$( (echo "$VOLTAR"; printf "Editar mensagem (amend)\nDesfazer ultimo commit (mantem mudancas)\nDesfazer ultimo commit (descarta mudancas)") | fzf +m \
+        "${FZF_OPTS[@]}" \
+        --header "  Undo  |  ultimo commit sera afetado" \
+        --height 30%)
+    exit_code=$?
+    fzf_check $exit_code || return 0
+    [[ "$action" == "$VOLTAR" ]] && return 0
+
+    case "$action" in
+        *"Editar mensagem"*)
+            local current_msg new_msg
+            current_msg=$(git log -1 --pretty=%B)
+            echo "  Mensagem atual: $current_msg"
+            read -rp "  Nova mensagem (vazio para cancelar): " new_msg
+            [ -z "$new_msg" ] && { echo "  Cancelado."; return; }
+            git commit --amend -m "$new_msg"
+            echo "  OK: mensagem atualizada."
+            ;;
+        *"mantem mudancas"*)
+            confirm "Desfazer o ultimo commit e manter as mudancas no working tree?" || { echo "  Cancelado."; return; }
+            git reset --soft HEAD~1
+            echo "  OK: commit desfeito, mudancas mantidas (staged)."
+            ;;
+        *"descarta mudancas"*)
+            confirm "ATENCAO: isso APAGA as mudancas do ultimo commit. Confirmar?" || { echo "  Cancelado."; return; }
+            confirm "Tem certeza mesmo? Essa acao nao tem volta" || { echo "  Cancelado."; return; }
+            git reset --hard HEAD~1
+            echo "  OK: commit e mudancas descartados."
+            ;;
+    esac
+}
+
 stash_menu() {
     local action exit_code
 
@@ -248,18 +292,16 @@ show_log() {
             "${FZF_OPTS[@]}" \
             --ansi \
             --no-sort \
-            --header "  Log  |  $REPO_NAME [$CURRENT_BRANCH]  |  ENTER para ver diff  |  ESC para voltar" \
+            --header "  Log  |  $REPO_NAME [$CURRENT_BRANCH]  |  ESC para voltar" \
             --height 90% \
-            --preview 'echo {} | grep -o "[a-f0-9]\{7,\}" | head -1 | xargs -I{} git -c color.ui=always show --stat {}' \
-            --bind 'enter:execute(echo {} | grep -o "[a-f0-9]\{7\}" | head -1 | xargs git show --stat --color=always | less -R)' \
-            --bind 'ctrl-d:execute(echo {} | grep -o "[a-f0-9]\{7\}" | head -1 | xargs -I{} git -c color.ui=always show {} | less -R)'
+            --preview 'echo {} | grep -o "[a-f0-9]\{7,\}" | head -1 | xargs -I{} git -c color.ui=always show --stat {}'
     return 0
 }
 
 pull_fetch() {
     local action exit_code
 
-    action=$( (echo "$VOLTAR"; printf "Pull\nFetch\nFetch --all") | fzf +m \
+    action=$( (echo "$VOLTAR"; printf "Pull\nPush\nFetch\nFetch --all") | fzf +m \
         "${FZF_OPTS[@]}" \
         --header "  Sync" \
         --height 25%)
@@ -269,6 +311,18 @@ pull_fetch() {
 
     case "$action" in
         *"Pull"*)         git pull ;;
+        *"Push"*)
+            if git push 2>/tmp/push_err; then
+                echo "  OK: push realizado."
+            else
+                cat /tmp/push_err
+                if grep -q "no upstream branch" /tmp/push_err; then
+                    confirm "Branch sem upstream. Criar com 'push -u origin $CURRENT_BRANCH'?" \
+                        && git push -u origin "$CURRENT_BRANCH" && echo "  OK: upstream configurado e push feito."
+                fi
+            fi
+            rm -f /tmp/push_err
+            ;;
         *"Fetch --all"*)  git fetch --all --prune && echo "  OK: fetch --all concluido." ;;
         *"Fetch"*)        git fetch --prune && echo "  OK: fetch concluido." ;;
     esac
@@ -298,8 +352,9 @@ function main() {
         "5 - commit  |  Commit interativo"
         "6 - stash   |  Gerenciar stash"
         "7 - log     |  Ver historico"
-        "8 - sync    |  Pull / Fetch"
-        "9 - exit    |  Sair"
+        "8 - sync    |  Push / Pull / Fetch"
+        "9 - undo    |  Desfazer/editar ultimo commit"
+        "0 - exit    |  Sair"
     )
 
     local selected exit_code
@@ -324,6 +379,7 @@ function main() {
         *"stash"*)   stash_menu ;;
         *"log"*)     show_log ;;
         *"sync"*)    pull_fetch ;;
+        *"undo"*)    undo_commit ;;
         *"exit"*)    exit 0 ;;
     esac
 
