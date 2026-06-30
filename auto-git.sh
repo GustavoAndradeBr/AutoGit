@@ -285,7 +285,7 @@ function main (){
         ;;
         ${option[1]})
             echo "Merging Branch..."
-            merge
+            merge_branch
             exit 0
         ;;
         ${option[2]})
