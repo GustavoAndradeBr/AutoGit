@@ -1,11 +1,32 @@
 #!/bin/bash
 
+# ─────────────────────────────────────────────
+#  gitui — Git TUI interativo com fzf
+#  by Gustavo
+# ─────────────────────────────────────────────
+
+set -euo pipefail
+
+for cmd in git fzf; do
+    if ! command -v "$cmd" &>/dev/null; then
+        echo "Dependencia nao encontrada: $cmd"
+        exit 1
+    fi
+done
+
+if ! git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
+    echo "Nao e um repositorio git."
+    exit 1
+fi
+
 function exit_exeption (){
     if [ $? -eq 130 ]; then
         echo "Exiting..."
         exit 1
     fi  
 }
+
+VOLTAR="← voltar"
 
 function switch_branch () {
 
