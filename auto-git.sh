@@ -42,6 +42,16 @@ fzf_check() {
     return 0
 }
 
+other_branches() {
+    git branch | grep -v "^\* "
+}
+
+confirm() {
+    local msg="$1"
+    read -rp "  $msg (s/N): " ans
+    [[ "$ans" =~ ^[sS]$ ]]
+}
+
 VOLTAR="← voltar"
 
 function switch_branch () {
