@@ -133,6 +133,61 @@ function delete_branch() {
     fi
 }
 
+commit_interativo() {
+    if git diff --quiet && git diff --cached --quiet; then
+        echo "  Nada para commitar. Working tree limpa."
+        return
+    fi
+
+    echo ""
+    echo "  Status atual:"
+    git -c color.ui=always status --short
+    echo ""
+
+    local files exit_code
+    files=$( (echo "$VOLTAR"; git status --short) | fzf -m \
+        "${FZF_OPTS[@]}" \
+        --header "  Commit  |  TAB para selecionar multiplos arquivos" \
+        --height 60% \
+        --preview 'f=$(echo {} | awk "{print \$2}"); [ "$f" = "voltar" ] && echo "  Voltar ao menu principal" || git -c color.ui=always diff "$f" 2>/dev/null || git -c color.ui=always diff --cached "$f"')
+    exit_code=$?
+
+    fzf_check $exit_code || return 0
+    [[ "$files" == "$VOLTAR" ]] && return 0
+
+    [ -z "$files" ] && { echo "  Nenhum arquivo selecionado."; return; }
+
+    echo "$files" | grep -v "← voltar" | awk '{print $2}' | xargs git add
+    echo ""
+    git -c color.ui=always diff --cached --stat
+    echo ""
+
+    local commit_type
+    commit_type=$( (echo "$VOLTAR"; printf "feat\nfix\ndocs\nstyle\nrefactor\ntest\nchore\nbuild\nci\nperf\nrevert") | fzf +m \
+        "${FZF_OPTS[@]}" \
+        --header "  Tipo do commit (Conventional Commits)" \
+        --height 40%)
+    exit_code=$?
+    fzf_check $exit_code || { git reset HEAD &>/dev/null; return 0; }
+    [[ "$commit_type" == "$VOLTAR" ]] && { git reset HEAD &>/dev/null; return 0; }
+
+    read -rp "  Scope (opcional, ex: auth, ui): " scope
+    read -rp "  Mensagem: " msg
+    [ -z "$msg" ] && { echo "  Commit cancelado."; git reset HEAD &>/dev/null; return; }
+
+    local full_msg
+    if [ -n "$scope" ]; then
+        full_msg="$commit_type($scope): $msg"
+    else
+        full_msg="$commit_type: $msg"
+    fi
+
+    git commit -m "$full_msg"
+    echo ""
+    echo "  OK: $full_msg"
+
+    confirm "Fazer push agora?" && git push && echo "  OK: push realizado." || true
+}
 
 function main (){
 
@@ -140,7 +195,9 @@ function main (){
         "1 - Switch Branch" \
         "2 - Merge Branch" \
         "3 - Delete Branch" \
-        "4 - Exit" \
+        "4 - Create Branch" \
+        "5 - Commit Changes" \
+        "6 - Exit" \
     )
 
     selected=$(for opt in "${option[@]}"; do echo "$opt"; done | fzf +m \
@@ -170,6 +227,16 @@ function main (){
             exit 0
         ;; 
         ${option[3]})
+            echo "Creating Branch..."
+            create_branch
+            exit 0
+        ;;
+        ${option[4]})
+            echo "Committing Changes..."
+            commit_interativo
+            exit 0
+        ;;
+        ${option[5]})
             echo "Exiting..."
             exit 0
         ;;
