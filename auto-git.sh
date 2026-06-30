@@ -57,66 +57,67 @@ confirm() {
 
 VOLTAR="← voltar"
 
-function switch_branch () {
-
+function switch_branch() {
     local selected exit_code
+
     selected=$( (echo "$VOLTAR"; other_branches) | fzf +m \
         "${FZF_OPTS[@]}" \
-        --header "Select a branch to switch to:" \
-        --height 40% \
-        --preview \
-            'git -c color.ui=always log --oneline $(echo {} | tr -d "* ")')
+        --header "  Switch Branch  |  branch atual: $CURRENT_BRANCH" \
+        --height 50% \
+        --preview 'b=$(echo {} | tr -d " *"); [ "$b" = "← voltar" ] && echo "  Voltar ao menu principal" || git -c color.ui=always log --oneline --graph -20 "$b"')
     exit_code=$?
 
     fzf_check $exit_code || return 0
     [[ "$selected" == "$VOLTAR" ]] && return 0
 
-    selected=$(echo $selected | tr -d "* ")
+    selected=$(echo "$selected" | tr -d " *")
     git switch "$selected"
     echo "  OK: trocado para '$selected'"
-
 }
 
-function merge () {
-
+function merge_branch() {
     local selected exit_code
+
     selected=$( (echo "$VOLTAR"; other_branches) | fzf +m \
         "${FZF_OPTS[@]}" \
-        --header "Select a branch to merge into the current branch:" \
-        --height 100% \
-        --preview \
-            'git -c color.ui=always diff $(git branch | grep "^*" | tr -d "* ") $(echo {} | tr -d "* ")')
+        --header "  Merge  |  destino: $CURRENT_BRANCH" \
+        --height 80% \
+        --preview "b=\$(echo {} | tr -d ' *'); [ \"\$b\" = '← voltar' ] && echo '  Voltar ao menu principal' || git -c color.ui=always diff $CURRENT_BRANCH \"\$b\" -- 2>/dev/null | head -80")
     exit_code=$?
 
     fzf_check $exit_code || return 0
     [[ "$selected" == "$VOLTAR" ]] && return 0
 
-    selected=$(echo $selected | tr -d "* ")
+    selected=$(echo "$selected" | tr -d " *")
+    echo "  Mergeando '$selected' -> '$CURRENT_BRANCH'..."
     git merge "$selected"
 }
 
-function delete_branch () {
-
+function delete_branch() {
     local selected exit_code
+
     selected=$( (echo "$VOLTAR"; other_branches) | fzf +m \
         "${FZF_OPTS[@]}" \
-        --header "Select a branch to delete:" \
-        --height 40% \
-        --preview \
-            'git -c color.ui=always log --oneline $(echo {} | tr -d "* ")')
+        --header "  ATENCAO: Deletar Branch  |  branch atual: $CURRENT_BRANCH" \
+        --height 50% \
+        --preview 'b=$(echo {} | tr -d " *"); [ "$b" = "← voltar" ] && echo "  Voltar ao menu principal" || git -c color.ui=always log --oneline --graph -15 "$b"')
     exit_code=$?
 
     fzf_check $exit_code || return 0
     [[ "$selected" == "$VOLTAR" ]] && return 0
 
-    selected=$(echo $selected | tr -d "* ")
+    selected=$(echo "$selected" | tr -d " *")
 
-    confirm "Deletar '$selected'?" || { echo "Cancelado."; return; }
+    confirm "Deletar '$selected'?" || { echo "  Cancelado."; return; }
 
     if ! git branch -d "$selected" 2>/dev/null; then
-        confirm "Branch nao mergeada. Forcar (-D)?" && git branch -D "$selected"
+        echo "  Branch com commits nao mergeados."
+        confirm "Forcar delecao (-D)?" && git branch -D "$selected" && echo "  OK: deletada." || echo "  Cancelado."
+    else
+        echo "  OK: branch '$selected' deletada."
     fi
 }
+
 
 function main (){
 
