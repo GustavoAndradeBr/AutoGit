@@ -19,6 +19,19 @@ if ! git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
     exit 1
 fi
 
+# ── fzf cor bonitinho e verde
+FZF_OPTS=( 
+    --layout reverse
+    --border rounded
+    --color "bg:#0a0a0a,bg+:#0d1f0d,fg:#00cc44,fg+:#00ff55"
+    --color "header:#00ff55,info:#007722,prompt:#00cc44,pointer:#00ff55"
+    --color "preview-bg:#050f05,border:#00aa33,hl:#00ff55,hl+:#88ffaa"
+    --color "preview-border:#007722,gutter:#0a0a0a"
+    --prompt "  > "
+    --pointer ">"
+    --marker "*"
+)
+
 fzf_check() {
     local exit_code=$1
     if [ "$exit_code" -eq 130 ]; then
@@ -34,13 +47,11 @@ VOLTAR="← voltar"
 function switch_branch () {
 
     selected=$(git branch | fzf +m \
+        "${FZF_OPTS[@]}" \
         --header "Select a branch to switch to:" \
         --height 40% \
-        --layout reverse \
-        --border \
         --preview \
-            'git -c color.ui=always log --oneline $(echo {} | tr -d "* ")' \
-        --color bg:#222222,preview-bg:#333333)
+            'git -c color.ui=always log --oneline $(echo {} | tr -d "* ")')
 
     exit_code=$?
     fzf_check $exit_code || return 0
@@ -53,13 +64,11 @@ function switch_branch () {
 function merge () {
 
     selected=$(git branch | fzf +m \
+        "${FZF_OPTS[@]}" \
         --header "Select a branch to merge into the current branch:" \
         --height 100% \
-        --layout reverse \
-        --border \
         --preview \
-            'git -c color.ui=always diff $(git branch | grep "^*" | tr -d "* ") $(echo {} | tr -d "* ")' \
-        --color bg:#222222,preview-bg:#333333)
+            'git -c color.ui=always diff $(git branch | grep "^*" | tr -d "* ") $(echo {} | tr -d "* ")')
 
     exit_code=$?
     fzf_check $exit_code || return 0
@@ -72,13 +81,11 @@ function merge () {
 function delete_branch () {
 
     selected=$(git branch | fzf +m \
+        "${FZF_OPTS[@]}" \
         --header "Select a branch to delete:" \
         --height 40% \
-        --layout reverse \
-        --border \
         --preview \
-            'git -c color.ui=always log --oneline $(echo {} | tr -d "* ")' \
-        --color bg:#222222,preview-bg:#333333)
+            'git -c color.ui=always log --oneline $(echo {} | tr -d "* ")')
 
     exit_code=$?
     fzf_check $exit_code || return 0
