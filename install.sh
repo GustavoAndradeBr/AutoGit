@@ -1,18 +1,18 @@
 #!/bin/bash
 
 # ─────────────────────────────────────────────
-#  install.sh — instalador do gitui
+#  install.sh — instalador do atg
 #  by Gustavo
 # ─────────────────────────────────────────────
 
 set -euo pipefail
 
-SCRIPT_NAME="gitui.sh"
+SCRIPT_NAME="atg.sh"
 BIN_DIR="$HOME/bin"
 BIN_NAME="atg"
 
 echo ""
-echo "  Instalando gitui..."
+echo "  Instalando atg..."
 echo ""
 
 # Verifica se o script existe no diretorio atual
@@ -25,14 +25,14 @@ fi
 # Verifica dependencias
 for cmd in git fzf; do
     if ! command -v "$cmd" &>/dev/null; then
-        echo "  Aviso: '$cmd' nao encontrado. Instale antes de usar o gitui."
+        echo "  Aviso: '$cmd' nao encontrado. Instale antes de usar o atg."
     fi
 done
 
 # Cria ~/bin se nao existir
 mkdir -p "$BIN_DIR"
 
-# Copia o script para ~/bin/gitui
+# Copia o script para ~/bin/atg
 cp "$SCRIPT_NAME" "$BIN_DIR/$BIN_NAME"
 chmod +x "$BIN_DIR/$BIN_NAME"
 
@@ -55,7 +55,7 @@ fi
 # Adiciona ~/bin ao PATH se ainda nao estiver
 if ! grep -q 'export PATH="$HOME/bin:$PATH"' "$PROFILE_FILE" 2>/dev/null; then
     echo '' >> "$PROFILE_FILE"
-    echo '# Adicionado pelo instalador do gitui' >> "$PROFILE_FILE"
+    echo '# Adicionado pelo instalador do atg' >> "$PROFILE_FILE"
     echo 'export PATH="$HOME/bin:$PATH"' >> "$PROFILE_FILE"
     echo "  OK: PATH atualizado em $PROFILE_FILE"
 else
