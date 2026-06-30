@@ -75,6 +75,21 @@ function switch_branch() {
     echo "  OK: trocado para '$selected'"
 }
 
+
+function create_branch() {
+    read -rp "  Nome da nova branch (vazio para voltar): " branch_name
+    [ -z "$branch_name" ] && { echo "  Voltando..."; return; }
+
+    read -rp "  Fazer checkout automatico? (S/n): " checkout
+    if [[ ! "$checkout" =~ ^[nN]$ ]]; then
+        git switch -c "$branch_name"
+        echo "  OK: branch '$branch_name' criada e ativada."
+    else
+        git branch "$branch_name"
+        echo "  OK: branch '$branch_name' criada."
+    fi
+}
+
 function merge_branch() {
     local selected exit_code
 
