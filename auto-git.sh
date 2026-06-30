@@ -32,6 +32,9 @@ FZF_OPTS=(
     --marker "*"
 )
 
+CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "HEAD detached")
+REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
+
 fzf_check() {
     local exit_code=$1
     if [ "$exit_code" -eq 130 ]; then
