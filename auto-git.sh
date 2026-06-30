@@ -189,6 +189,56 @@ commit_interativo() {
     confirm "Fazer push agora?" && git push && echo "  OK: push realizado." || true
 }
 
+stash_menu() {
+    local action exit_code
+
+    action=$( (echo "$VOLTAR"; printf "Salvar stash\nAplicar stash\nDeletar stash\nVer todos os stashes") | fzf +m \
+        "${FZF_OPTS[@]}" \
+        --header "  Stash" \
+        --height 30%)
+    exit_code=$?
+    fzf_check $exit_code || return 0
+    [[ "$action" == "$VOLTAR" ]] && return 0
+
+    case "$action" in
+        *"Salvar"*)
+            read -rp "  Nome do stash (opcional): " stash_name
+            if [ -n "$stash_name" ]; then
+                git stash push -m "$stash_name" && echo "  OK: stash '$stash_name' salvo."
+            else
+                git stash && echo "  OK: stash salvo."
+            fi
+            ;;
+        *"Aplicar"*)
+            local stash
+            stash=$( (echo "$VOLTAR"; git stash list) | fzf +m \
+                "${FZF_OPTS[@]}" \
+                --header "  Selecione o stash para aplicar" \
+                --height 40% \
+                --preview 'r=$(echo {} | cut -d: -f1); [ "$r" = "← voltar" ] && echo "  Voltar" || git -c color.ui=always stash show -p "$r"')
+            fzf_check $? || return 0
+            [[ "$stash" == "$VOLTAR" ]] && return 0
+            git stash pop "$(echo "$stash" | cut -d: -f1)"
+            echo "  OK: stash aplicado."
+            ;;
+        *"Deletar"*)
+            local stash
+            stash=$( (echo "$VOLTAR"; git stash list) | fzf +m \
+                "${FZF_OPTS[@]}" \
+                --header "  ATENCAO: Deletar stash" \
+                --height 40%)
+            fzf_check $? || return 0
+            [[ "$stash" == "$VOLTAR" ]] && return 0
+            local ref
+            ref=$(echo "$stash" | cut -d: -f1)
+            confirm "Deletar '$ref'?" && git stash drop "$ref" && echo "  OK: stash deletado."
+            ;;
+        *"Ver"*)
+            git stash list
+            ;;
+    esac
+}
+
 function main (){
 
     option=(\
