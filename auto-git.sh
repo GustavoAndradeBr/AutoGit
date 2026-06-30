@@ -94,19 +94,25 @@ function merge () {
 
 function delete_branch () {
 
-    selected=$(git branch | fzf +m \
+    local selected exit_code
+    selected=$( (echo "$VOLTAR"; other_branches) | fzf +m \
         "${FZF_OPTS[@]}" \
         --header "Select a branch to delete:" \
         --height 40% \
         --preview \
             'git -c color.ui=always log --oneline $(echo {} | tr -d "* ")')
-
     exit_code=$?
+
     fzf_check $exit_code || return 0
-    
+    [[ "$selected" == "$VOLTAR" ]] && return 0
+
     selected=$(echo $selected | tr -d "* ")
 
-    git branch -d "$selected"
+    confirm "Deletar '$selected'?" || { echo "Cancelado."; return; }
+
+    if ! git branch -d "$selected" 2>/dev/null; then
+        confirm "Branch nao mergeada. Forcar (-D)?" && git branch -D "$selected"
+    fi
 }
 
 function main (){
