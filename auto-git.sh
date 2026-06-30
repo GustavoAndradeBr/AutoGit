@@ -256,6 +256,24 @@ show_log() {
     return 0
 }
 
+pull_fetch() {
+    local action exit_code
+
+    action=$( (echo "$VOLTAR"; printf "Pull\nFetch\nFetch --all") | fzf +m \
+        "${FZF_OPTS[@]}" \
+        --header "  Sync" \
+        --height 25%)
+    exit_code=$?
+    fzf_check $exit_code || return 0
+    [[ "$action" == "$VOLTAR" ]] && return 0
+
+    case "$action" in
+        *"Pull"*)         git pull ;;
+        *"Fetch --all"*)  git fetch --all --prune && echo "  OK: fetch --all concluido." ;;
+        *"Fetch"*)        git fetch --prune && echo "  OK: fetch concluido." ;;
+    esac
+}
+
 function main (){
 
     option=(\
