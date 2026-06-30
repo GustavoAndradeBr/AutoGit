@@ -19,11 +19,14 @@ if ! git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
     exit 1
 fi
 
-function exit_exeption (){
-    if [ $? -eq 130 ]; then
-        echo "Exiting..."
-        exit 1
-    fi  
+fzf_check() {
+    local exit_code=$1
+    if [ "$exit_code" -eq 130 ]; then
+        echo ""
+        echo "  Cancelado."
+        return 1
+    fi
+    return 0
 }
 
 VOLTAR="← voltar"
@@ -39,8 +42,9 @@ function switch_branch () {
             'git -c color.ui=always log --oneline $(echo {} | tr -d "* ")' \
         --color bg:#222222,preview-bg:#333333)
 
-    exit_exeption
-    
+    exit_code=$?
+    fzf_check $exit_code || return 0
+
     selected=$(echo $selected | tr -d "* ")
 
     git switch "$selected"
@@ -57,7 +61,8 @@ function merge () {
             'git -c color.ui=always diff $(git branch | grep "^*" | tr -d "* ") $(echo {} | tr -d "* ")' \
         --color bg:#222222,preview-bg:#333333)
 
-    exit_exeption
+    exit_code=$?
+    fzf_check $exit_code || return 0
     
     selected=$(echo $selected | tr -d "* ")
 
@@ -75,7 +80,8 @@ function delete_branch () {
             'git -c color.ui=always log --oneline $(echo {} | tr -d "* ")' \
         --color bg:#222222,preview-bg:#333333)
 
-    exit_exeption
+    exit_code=$?
+    fzf_check $exit_code || return 0
     
     selected=$(echo $selected | tr -d "* ")
 
@@ -98,7 +104,8 @@ function main (){
         --border \
         --color bg:#222222)
 
-    exit_exeption
+    exit_code=$?
+    fzf_check $exit_code || return 0
 
     case "$selected" in 
         ${option[0]})
