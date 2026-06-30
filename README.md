@@ -4,6 +4,10 @@
 
 Navega branches, faz commits com Conventional Commits, gerencia stash e visualiza o histórico — tudo sem digitar um comando sequer.
 
+<p align="center">
+  <img src="assets/gifproject.gif" alt="Demonstração do atg.sh" width="900">
+</p>
+
 ---
 
 ## Demo
