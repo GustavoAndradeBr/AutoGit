@@ -239,6 +239,23 @@ stash_menu() {
     esac
 }
 
+show_log() {
+    git log \
+        --graph \
+        --color=always \
+        --format="%C(auto)%h%d %s %C(dim)%cr %C(bold blue)<%an>%Creset" \
+        | fzf \
+            "${FZF_OPTS[@]}" \
+            --ansi \
+            --no-sort \
+            --header "  Log  |  $REPO_NAME [$CURRENT_BRANCH]  |  ENTER para ver diff  |  ESC para voltar" \
+            --height 90% \
+            --preview 'echo {} | grep -o "[a-f0-9]\{7,\}" | head -1 | xargs -I{} git -c color.ui=always show --stat {}' \
+            --bind 'enter:execute(echo {} | grep -o "[a-f0-9]\{7\}" | head -1 | xargs git show --stat --color=always | less -R)' \
+            --bind 'ctrl-d:execute(echo {} | grep -o "[a-f0-9]\{7\}" | head -1 | xargs -I{} git -c color.ui=always show {} | less -R)'
+    return 0
+}
+
 function main (){
 
     option=(\
