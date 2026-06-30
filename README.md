@@ -96,22 +96,42 @@ sudo pacman -S fzf
 ```bash
 # Clonar o repositório
 git clone https://github.com/GustavoAndradeBr/AutoGit.git
+cd AutoGit
+```
 
-# Dar permissão de execução
+### Opção 1 — Instalador automático
+
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+O `install.sh` faz tudo isso por você:
+
+- Verifica se `git` e `fzf` estão instalados
+- Copia o `atg.sh` para `~/bin/atg`
+- Dá permissão de execução
+- Adiciona `~/bin` ao `PATH` no seu `.bashrc`/`.zshrc` (se ainda não estiver)
+
+Depois, recarregue o terminal:
+
+```bash
+source ~/.bashrc   # ou ~/.zshrc
+```
+
+E pronto — `atg` fica disponível em qualquer repositório git, de qualquer pasta.
+
+### Opção 2 — Manual
+
+```bash
 chmod +x atg.sh
-
-# Instalar globalmente (opcional)
-sudo mv atg.sh /usr/local/bin/auto-git
+sudo mv atg.sh /usr/local/bin/atg
 ```
 
 **Usar:**
 
 ```bash
-# Se instalado globalmente
-atg.sh
-
-# Ou direto
-./atg.sh
+atg
 ```
 
 ---
